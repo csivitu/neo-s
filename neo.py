@@ -13,7 +13,7 @@ class LogisticRegression:
 
     def fit(self, X, y):
         n_samples, n_features = X.shape
-        self.weights = np.ones(n_features)  # Error 1: Improper weight initialization
+        self.weights = np.zeros(n_features)  # Error 1: Improper weight initialization
         self.bias = np.zeros(n_features)  # Error 2: Bias should be a scalar, not an array
 
         for epoch in range(self.epochs):
