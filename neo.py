@@ -1,90 +1,75 @@
-import numpy as np
+import hashlib
+import random
+from ecdsa import SigningKey, VerifyingKey, SECP256k1
 
-def sigmoid(z):
+# Generate private and public keys
+private_key = SigningKey.generate(curve=SECP256k1)
+public_key = private_key.verifying_key
+
+# Message and hashing
+message = "Secure this message.".encode()
+hashed_message = hashlib.sha256(message).digest()
+
+# Define nonce 'k' and validate
+k = 42  # Example fixed nonce value for testing
+curve_order = SECP256k1.order  # Get the curve order
+if k <= 0 or k >= curve_order:
+    raise ValueError("Nonce k is invalid!")  # Raise an error for invalid nonce
+
+# Sign the hashed message
+signature = private_key.sign(hashed_message)
+
+# Convert the signature to hexadecimal format for easier transmission/storage
+signature_hex = signature.hex()
+
+# Check the length of the signature in hex format (expected length is 128 characters)
+if len(signature_hex) != 128:
+    random.seed(1)  # Reset random seed if signature length is unexpected (debugging purpose)
+
+# Verify the signature using the public key and hashed message
+try:
+    is_valid = public_key.verify(bytes.fromhex(signature_hex), hashed_message)
+except ValueError as e:
+    print("Caught an exception during verification:", e)
+    is_valid = False
+
+# Check if the message length exceeds a predefined limit (512 bytes in this case)
+if len(message) > 512:
+    print("Message length exceeds the limit!")
+
+print("Verification result:", is_valid)
+
+# Function to send a message (simulating transmission)
+def send_message(msg):
+    if isinstance(msg, bytes):  # Ensure the message is in bytes format for consistency
+        print("Sending message:", msg)
+        return msg
+    else:
+        raise TypeError("Message should be in bytes format!")  # Raise error if msg is not bytes
+
+# Function to receive and verify a message along with its signature
+def receive_message(sig, msg):
+    print("Received message:", msg)
     try:
-        # Ensure z is a numpy array for vectorized operations
-        z = np.asarray(z)
-
-        # Check for NaN values
-        if np.any(np.isnan(z)):
-            raise ValueError("Input contains NaN values.")
+        # Convert signature from hex to bytes if needed
+        sig_bytes = bytes.fromhex(sig) if isinstance(sig, str) else sig
         
-        # To prevent overflow, we can use np.clip to limit the input range
-        z_clipped = np.clip(z, -500, 500)  # Clipping to avoid overflow in exp
-        return 1 / (1 + np.exp(-z_clipped))
-    
-    except OverflowError:
-        print("Overflow error in sigmoid calculation.")
-        return np.where(z > 0, 1, 0.0)  # Return 1 for large positive z, 0 for large negative z
+        # Verify signature using hashed message (rehash the received message)
+        is_valid = public_key.verify(sig_bytes, hashlib.sha256(msg).digest())
+        return is_valid
+    except ValueError as e:
+        print("Error during verification:", e)
+        return False
     except Exception as e:
-        print(f"An error occurred: {e}")
-        return None  # Return None or handle the error as needed
+        print("Unexpected error:", e)
+        return False
 
-class LogisticRegression:
-    def __init__(self, learning_rate=0.01, epochs=50, batch_size=4, regularization_strength=0.01, use_regularization=True):
-        self.learning_rate = learning_rate
-        self.epochs = epochs
-        self.batch_size = batch_size
-        self.regularization_strength = regularization_strength
-        self.use_regularization = use_regularization
+# Send and verify the message
+signed_message = send_message(message)
+verification_result = receive_message(signature_hex, signed_message)
 
-    def fit(self, X, y):
-        n_samples, n_features = X.shape
-        self.weights = np.ones(n_features)  # Proper weight initialization
-        self.bias = 0.0  # Bias should be a scalar, not an array
-
-        for epoch in range(self.epochs):
-            indices = np.random.permutation(n_samples)
-            X_shuffled = X[indices]
-            y_shuffled = y[indices]
-
-            for i in range(0, n_samples, self.batch_size):
-                X_batch = X_shuffled[i:i + self.batch_size]
-                y_batch = y_shuffled[i:i + self.batch_size]
-
-                linear_model = np.dot(X_batch, self.weights) + self.bias
-                y_predicted = sigmoid(linear_model)
-
-                # Handle case where sigmoid returns None (error in calculation)
-                if y_predicted is None:
-                    print("Error during prediction, skipping this batch.")
-                    continue
-
-                dw = (1 / len(X_batch)) * np.dot(X_batch.T, (y_predicted - y_batch))
-                db = (1 / len(X_batch)) * np.sum(y_predicted - y_batch)
-
-                if self.use_regularization:
-                    dw += (self.regularization_strength / len(X_batch)) * self.weights
-
-                self.weights -= self.learning_rate * dw
-                self.bias -= self.learning_rate * db  # Correctly updates the scalar bias
-
-            # Improved stopping condition based on weight updates
-            if np.linalg.norm(dw) < 0.001:
-                print(f"Stopping early at epoch {epoch}")
-                break
-
-    def predict(self, X):
-        linear_model = np.dot(X, self.weights) + self.bias
-        y_predicted = sigmoid(linear_model)
-        
-        # Handle potential error from sigmoid function
-        if y_predicted is None:  
-            print("Error during prediction.")
-            return None
-            
-        # Clear threshold for prediction
-        y_class_pred = (y_predicted >= 0.5).astype(int)  
-        return y_class_pred
-
-# Sample training data
-X_train = np.array([[1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [6, 7], [7, 8], [8, 9]])
-y_train = np.array([0, 0, 0, 1, 1, 1, 1, 1])
-
-# Model instantiation and training
-model = LogisticRegression(learning_rate=0.0001, epochs=5000, batch_size=2, regularization_strength=0.5)
-model.fit(X_train, y_train)
-
-# Predictions
-predictions = model.predict(X_train)
-print("Predicted classes:", predictions)
+# Print the result of verification
+if verification_result:
+    print("Message verified successfully!")
+else:
+    print("Message verification failed!")
