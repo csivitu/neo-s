@@ -1,75 +1,66 @@
-import hashlib
-import random
-from ecdsa import SigningKey, VerifyingKey, SECP256k1
+import numpy as np
 
-# Generate private and public keys
-private_key = SigningKey.generate(curve=SECP256k1)
-public_key = private_key.verifying_key
+def sigmoid(z):
+    """Compute the sigmoid function."""
+    return 1 / (1 + np.exp(-z))
 
-# Message and hashing
-message = "Secure this message.".encode()
-hashed_message = hashlib.sha256(message).digest()
+class LogisticRegression:
+    def __init__(self, learning_rate=0.01, epochs=50, batch_size=4, regularization_strength=0.01, use_regularization=True):
+        self.learning_rate = learning_rate
+        self.epochs = epochs
+        self.batch_size = batch_size
+        self.regularization_strength = regularization_strength
+        self.use_regularization = use_regularization
 
-# Define nonce 'k' and validate
-k = 42  # Example fixed nonce value for testing
-curve_order = SECP256k1.order  # Get the curve order
-if k <= 0 or k >= curve_order:
-    raise ValueError("Nonce k is invalid!")  # Raise an error for invalid nonce
+    def fit(self, X, y):
+        n_samples, n_features = X.shape
+        self.weights = np.zeros(n_features)  # Initialize weights to zeros for better convergence
+        self.bias = 0.0  # Bias should be a scalar
 
-# Sign the hashed message
-signature = private_key.sign(hashed_message)
+        for epoch in range(self.epochs):
+            indices = np.random.permutation(n_samples)
+            X_shuffled = X[indices]
+            y_shuffled = y[indices]
 
-# Convert the signature to hexadecimal format for easier transmission/storage
-signature_hex = signature.hex()
+            for i in range(0, n_samples, self.batch_size):
+                X_batch = X_shuffled[i:i + self.batch_size]
+                y_batch = y_shuffled[i:i + self.batch_size]
 
-# Check the length of the signature in hex format (expected length is 128 characters)
-if len(signature_hex) != 128:
-    random.seed(1)  # Reset random seed if signature length is unexpected (debugging purpose)
+                linear_model = np.dot(X_batch, self.weights) + self.bias
+                y_predicted = sigmoid(linear_model)
 
-# Verify the signature using the public key and hashed message
-try:
-    is_valid = public_key.verify(bytes.fromhex(signature_hex), hashed_message)
-except ValueError as e:
-    print("Caught an exception during verification:", e)
-    is_valid = False
+                # Calculate gradients
+                dw = (1 / len(X_batch)) * np.dot(X_batch.T, (y_predicted - y_batch))
+                db = (1 / len(X_batch)) * np.sum(y_predicted - y_batch)
 
-# Check if the message length exceeds a predefined limit (512 bytes in this case)
-if len(message) > 512:
-    print("Message length exceeds the limit!")
+                # Apply regularization if required
+                if self.use_regularization:
+                    dw += (self.regularization_strength / len(X_batch)) * self.weights
 
-print("Verification result:", is_valid)
+                # Update weights and bias
+                self.weights -= self.learning_rate * dw
+                self.bias -= self.learning_rate * db
 
-# Function to send a message (simulating transmission)
-def send_message(msg):
-    if isinstance(msg, bytes):  # Ensure the message is in bytes format for consistency
-        print("Sending message:", msg)
-        return msg
-    else:
-        raise TypeError("Message should be in bytes format!")  # Raise error if msg is not bytes
+            # Improved stopping condition
+            weight_update_norm = np.linalg.norm(dw)
+            if weight_update_norm < 0.001:
+                print(f"Stopping early at epoch {epoch} with weight update norm: {weight_update_norm:.6f}")
+                break
 
-# Function to receive and verify a message along with its signature
-def receive_message(sig, msg):
-    print("Received message:", msg)
-    try:
-        # Convert signature from hex to bytes if needed
-        sig_bytes = bytes.fromhex(sig) if isinstance(sig, str) else sig
-        
-        # Verify signature using hashed message (rehash the received message)
-        is_valid = public_key.verify(sig_bytes, hashlib.sha256(msg).digest())
-        return is_valid
-    except ValueError as e:
-        print("Error during verification:", e)
-        return False
-    except Exception as e:
-        print("Unexpected error:", e)
-        return False
+    def predict(self, X):
+        linear_model = np.dot(X, self.weights) + self.bias
+        y_predicted = sigmoid(linear_model)
+        y_class_pred = (y_predicted >= 0.5).astype(int)  # More concise and clear prediction
+        return y_class_pred
 
-# Send and verify the message
-signed_message = send_message(message)
-verification_result = receive_message(signature_hex, signed_message)
+# Sample training data
+X_train = np.array([[1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [6, 7], [7, 8], [8, 9]])
+y_train = np.array([0, 0, 0, 1, 1, 1, 1, 1])
 
-# Print the result of verification
-if verification_result:
-    print("Message verified successfully!")
-else:
-    print("Message verification failed!")
+# Model instantiation and training
+model = LogisticRegression(learning_rate=0.0001, epochs=5000, batch_size=2, regularization_strength=0.5)
+model.fit(X_train, y_train)
+
+# Predictions
+predictions = model.predict(X_train)
+print("Predicted classes:", predictions)
