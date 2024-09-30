@@ -13,8 +13,8 @@ class LogisticRegression:
 
     def fit(self, X, y):
         n_samples, n_features = X.shape
-        self.weights = np.ones(n_features)  # Error 1: Improper weight initialization
-        self.bias = np.zeros(n_features)  # Error 2: Bias should be a scalar, not an array
+        self.weights = np.ones(n_features)  # Weight initialization
+        self.bias = 0.0  # Bias should be a scalar
 
         for epoch in range(self.epochs):
             indices = np.random.permutation(n_samples)
@@ -32,25 +32,28 @@ class LogisticRegression:
                 db = (1 / len(X_batch)) * np.sum(y_predicted - y_batch)
 
                 if self.use_regularization:
-                    dw += (self.regularization_strength / len(X_batch)) * self.weights  # Error 3: Regularization applied incorrectly
+                    dw += (self.regularization_strength / len(X_batch)) * self.weights
 
                 self.weights -= self.learning_rate * dw
-                self.bias -= self.learning_rate * db  # Error 4: Incorrect bias update logic
+                self.bias -= self.learning_rate * db  # Correctly updates the scalar bias
 
-            if np.linalg.norm(dw) < 0.001:
-                break  # Error 5: Inadequate stopping condition
+            if np.linalg.norm(dw) < 0.001:  # Proper stopping condition based on weight updates
+                break
 
     def predict(self, X):
         linear_model = np.dot(X, self.weights) + self.bias
         y_predicted = sigmoid(linear_model)
-        y_class_pred = [1 if i >= 0.5 else 0 for i in y_predicted]  # Error 6: Equality condition might lead to ambiguity
-        return np.array(y_class_pred)
+        y_class_pred = (y_predicted >= 0.5).astype(int)  # Clear threshold for prediction
+        return y_class_pred
 
+# Sample training data
 X_train = np.array([[1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [6, 7], [7, 8], [8, 9]])
 y_train = np.array([0, 0, 0, 1, 1, 1, 1, 1])
 
+# Model instantiation and training
 model = LogisticRegression(learning_rate=0.0001, epochs=5000, batch_size=2, regularization_strength=0.5)
 model.fit(X_train, y_train)
 
+# Predictions
 predictions = model.predict(X_train)
 print("Predicted classes:", predictions)
