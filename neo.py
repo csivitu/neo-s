@@ -4,17 +4,23 @@ def sigmoid(z):
     try:
         return 1 / (1 + np.exp(-z))
     except OverflowError as e:
+issue_2_branch
+=======
+        print(f"OverflowError in sigmoid: {e}")
+main
         return 1.0 if z > 0 else 0.0
     
 class LogisticRegression:
-    def __init__(self, learning_rate=0.01, epochs=50, batch_size=4, regularization_strength=0.01, use_regularization=True):
+    def __init__(self, learning_rate=0.01, epochs=50, batch_size=4, regularization_strength=0.01, use_regularization=True, learning_rate_deacy = 0.99):
         self.learning_rate = learning_rate
         self.epochs = epochs
         self.batch_size = batch_size
         self.regularization_strength = regularization_strength
         self.use_regularization = use_regularization
+        self.learning_rate_decay = learning_rate_deacy
 
     def fit(self, X, y):
+issue_2_branch
         try:
             n_samples, n_features = X.shape
             self.weights = np.zeros(n_features)  # Corrected weight initialization
@@ -30,6 +36,14 @@ class LogisticRegression:
                 for i in range(0, n_samples, self.batch_size):
                     X_batch = X_shuffled[i:i + self.batch_size]
                     y_batch = y_shuffled[i:i + self.batch_size]
+=======
+        n_samples, n_features = X.shape
+        self.weights = np.random.randn(n_features)  # Corrected weight initialization
+        self.bias = 0  # Corrected bias initialization
+
+        prev_weights = np.zeros(n_features)
+        prev_bias = 0
+main
 
 
                     linear_model = np.dot(X_batch, self.weights) + self.bias
@@ -41,12 +55,19 @@ class LogisticRegression:
                     if self.use_regularization:
                         dw += (self.regularization_strength * self.weights)  # Corrected regularization term
 
+issue_2_branch
                     self.weights -= self.learning_rate * dw
                     self.bias -= self.learning_rate * db  # Corrected bias update logic
+=======
+                if self.use_regularization:
+                    dw += (self.regularization_strength * self.weights)  # Corrected regularization term
+                    dw += (self.regularization_strength * self.bias)
+main
 
                 if np.allclose(prev_weights, self.weights, rtol=1e-05):  # Corrected stopping condition
                     break
 
+issue_2_branch
                 prev_weights = self.weights
         
         except ValueError as e:
@@ -60,6 +81,18 @@ class LogisticRegression:
 
         except Exception as e:
             print(f"Unexpected error in fit method: {e}")        
+=======
+            self.learning_rate *= self.learning_rate_decay
+
+            if np.allclose(prev_weights, self.weights, rtol=1e-05):  # Corrected stopping condition
+                break
+
+            prev_weights = np.copy(self.weights)
+            prev_bias = self.bias
+
+        print(f"Epoch {epoch}: Weights change: {np.linalg.norm(dw)}, Bias change: {abs(db)}")    
+
+main
 
     def predict(self, X):
         try:
