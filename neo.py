@@ -59,6 +59,10 @@ issue_2_branch
 =======
         n_samples, n_features = X.shape
 main
+        self.weights = np.zeros(n_features)  # Error 1: Improper weight initialization
+        self.bias = 0.0  # Error 2: Bias should be a scalar, not an array
+=======
+main
         self.weights = np.random.rand(n_features) * 0.01  # Error 1: Improper weight initialization
         self.bias = 0  # Error 2: Bias should be a scalar, not an array
 =======
@@ -71,6 +75,7 @@ branch4
 
         prev_weights = np.zeros(n_features)
         prev_bias = 0
+main
 main
 main
 main
