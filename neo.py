@@ -1,6 +1,11 @@
 import numpy as np
 
 def sigmoid(z):
+branch4
+    """Compute the sigmoid function."""
+    return 1 / (1 + np.exp(-z))
+
+=======
     try:
         return 1 / (1 + np.exp(-z))
     except OverflowError as e:
@@ -10,6 +15,7 @@ issue_2_branch
 main
         return 1.0 if z > 0 else 0.0
     
+main
 class LogisticRegression:
 issue_3_branch
     def compute_loss(self, X, y):
@@ -52,11 +58,16 @@ issue_2_branch
                     y_batch = y_shuffled[i:i + self.batch_size]
 =======
         n_samples, n_features = X.shape
+branch4
+        self.weights = np.zeros(n_features)  # Initialize weights to zeros for better convergence
+        self.bias = 0.0  # Bias should be a scalar
+=======
         self.weights = np.random.randn(n_features)  # Corrected weight initialization
         self.bias = 0  # Corrected bias initialization
 
         prev_weights = np.zeros(n_features)
         prev_bias = 0
+main
 main
 
 
@@ -66,6 +77,43 @@ main
                     dw = (1 / len(X_batch)) * np.dot(X_batch.T, (y_predicted - y_batch))
                     db = (1 / len(X_batch)) * np.sum(y_predicted - y_batch)
 
+branch4
+                # Calculate gradients
+                dw = (1 / len(X_batch)) * np.dot(X_batch.T, (y_predicted - y_batch))
+                db = (1 / len(X_batch)) * np.sum(y_predicted - y_batch)
+
+                # Apply regularization if required
+                if self.use_regularization:
+                    dw += (self.regularization_strength / len(X_batch)) * self.weights
+
+                # Update weights and bias
+                self.weights -= self.learning_rate * dw
+                self.bias -= self.learning_rate * db
+
+            # Improved stopping condition
+            weight_update_norm = np.linalg.norm(dw)
+            if weight_update_norm < 0.001:
+                print(f"Stopping early at epoch {epoch} with weight update norm: {weight_update_norm:.6f}")
+                break
+
+    def predict(self, X):
+        linear_model = np.dot(X, self.weights) + self.bias
+        y_predicted = sigmoid(linear_model)
+        y_class_pred = (y_predicted >= 0.5).astype(int)  # More concise and clear prediction
+        return y_class_pred
+
+# Sample training data
+X_train = np.array([[1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [6, 7], [7, 8], [8, 9]])
+y_train = np.array([0, 0, 0, 1, 1, 1, 1, 1])
+
+# Model instantiation and training
+model = LogisticRegression(learning_rate=0.0001, epochs=5000, batch_size=2, regularization_strength=0.5)
+model.fit(X_train, y_train)
+
+# Predictions
+predictions = model.predict(X_train)
+print("Predicted classes:", predictions)
+=======
                     if self.use_regularization:
                         dw += (self.regularization_strength * self.weights)  # Corrected regularization term
 
@@ -126,3 +174,4 @@ main
 
         except Exception as e:
             print(f"Unexpected error in fit method: {e}") 
+main
