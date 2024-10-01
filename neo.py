@@ -4,6 +4,16 @@ def sigmoid(z):
     return 1 / (1 + np.exp(-z))
 
 class LogisticRegression:
+    def compute_loss(self, X, y):
+        linear_model = np.dot(X, self.weights) + self.bias
+        y_predicted = sigmoid(linear_model)
+        log_loss = -np.mean(y * np.log(y_predicted) + (1 - y) * np.log(1 - y_predicted))
+        
+        if self.use_regularization:
+            log_loss += (self.regularization_strength / 2) * np.sum(np.square(self.weights))  # L2 regularization
+        
+        return log_loss
+
     def __init__(self, learning_rate=0.01, epochs=50, batch_size=4, regularization_strength=0.01, use_regularization=True):
         self.learning_rate = learning_rate
         self.epochs = epochs
@@ -39,6 +49,9 @@ class LogisticRegression:
                 self.weights -= self.learning_rate * dw
                 self.bias -= self.learning_rate * db  # Corrected bias update logic
 
+            loss = self.compute_loss(X, y)
+            print(f'Epoch {epoch+1}/{self.epochs}, Loss: {loss:.4f}')            
+            
             if np.allclose(prev_weights, self.weights, rtol=1e-05):  # Corrected stopping condition
                 break
 
