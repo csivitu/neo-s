@@ -1,8 +1,12 @@
 import numpy as np
 
 def sigmoid(z):
-    return 1 / (1 + np.exp(-z))
-
+    try:
+        return 1 / (1 + np.exp(-z))
+    except OverflowError as e:
+        print(f"OverflowError in sigmoid: {e}")
+        return 1.0 if z > 0 else 0.0
+    
 class LogisticRegression:
     def __init__(self, learning_rate=0.01, epochs=50, batch_size=4, regularization_strength=0.01, use_regularization=True):
         self.learning_rate = learning_rate
