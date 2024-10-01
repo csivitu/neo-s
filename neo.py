@@ -4,7 +4,10 @@ def sigmoid(z):
     try:
         return 1 / (1 + np.exp(-z))
     except OverflowError as e:
+issue_2_branch
+=======
         print(f"OverflowError in sigmoid: {e}")
+main
         return 1.0 if z > 0 else 0.0
     
 class LogisticRegression:
@@ -17,35 +20,68 @@ class LogisticRegression:
         self.learning_rate_decay = learning_rate_deacy
 
     def fit(self, X, y):
+issue_2_branch
+        try:
+            n_samples, n_features = X.shape
+            self.weights = np.zeros(n_features)  # Corrected weight initialization
+            self.bias = 0  # Corrected bias initialization
+
+            prev_weights = np.zeros(n_features)
+
+            for epoch in range(self.epochs):
+                indices = np.random.permutation(n_samples)
+                X_shuffled = X[indices]
+                y_shuffled = y[indices]
+
+                for i in range(0, n_samples, self.batch_size):
+                    X_batch = X_shuffled[i:i + self.batch_size]
+                    y_batch = y_shuffled[i:i + self.batch_size]
+=======
         n_samples, n_features = X.shape
         self.weights = np.random.randn(n_features)  # Corrected weight initialization
         self.bias = 0  # Corrected bias initialization
 
         prev_weights = np.zeros(n_features)
         prev_bias = 0
+main
 
-        for epoch in range(self.epochs):
-            indices = np.random.permutation(n_samples)
-            X_shuffled = X[indices]
-            y_shuffled = y[indices]
 
-            for i in range(0, n_samples, self.batch_size):
-                X_batch = X_shuffled[i:i + self.batch_size]
-                y_batch = y_shuffled[i:i + self.batch_size]
+                    linear_model = np.dot(X_batch, self.weights) + self.bias
+                    y_predicted = sigmoid(linear_model)
 
-                linear_model = np.dot(X_batch, self.weights) + self.bias
-                y_predicted = sigmoid(linear_model)
+                    dw = (1 / len(X_batch)) * np.dot(X_batch.T, (y_predicted - y_batch))
+                    db = (1 / len(X_batch)) * np.sum(y_predicted - y_batch)
 
-                dw = (1 / len(X_batch)) * np.dot(X_batch.T, (y_predicted - y_batch))
-                db = (1 / len(X_batch)) * np.sum(y_predicted - y_batch)
+                    if self.use_regularization:
+                        dw += (self.regularization_strength * self.weights)  # Corrected regularization term
 
+issue_2_branch
+                    self.weights -= self.learning_rate * dw
+                    self.bias -= self.learning_rate * db  # Corrected bias update logic
+=======
                 if self.use_regularization:
                     dw += (self.regularization_strength * self.weights)  # Corrected regularization term
                     dw += (self.regularization_strength * self.bias)
+main
 
-                self.weights -= self.learning_rate * dw
-                self.bias -= self.learning_rate * db  # Corrected bias update logic
+                if np.allclose(prev_weights, self.weights, rtol=1e-05):  # Corrected stopping condition
+                    break
 
+issue_2_branch
+                prev_weights = self.weights
+        
+        except ValueError as e:
+            print(f"ValueError in fit method: {e}")
+        
+        except TypeError as e:
+            print(f"TypeError in fit method: {e}")
+
+        except IndexError as e:
+            print(f"IndexError in fit method: {e}")
+
+        except Exception as e:
+            print(f"Unexpected error in fit method: {e}")        
+=======
             self.learning_rate *= self.learning_rate_decay
 
             if np.allclose(prev_weights, self.weights, rtol=1e-05):  # Corrected stopping condition
@@ -56,9 +92,20 @@ class LogisticRegression:
 
         print(f"Epoch {epoch}: Weights change: {np.linalg.norm(dw)}, Bias change: {abs(db)}")    
 
+main
 
     def predict(self, X):
-        linear_model = np.dot(X, self.weights) + self.bias
-        y_predicted = sigmoid(linear_model)
-        y_class_pred = [1 if i > 0.5 else 0 for i in y_predicted]  # Corrected equality condition
-        return np.array(y_class_pred)
+        try:
+            linear_model = np.dot(X, self.weights) + self.bias
+            y_predicted = sigmoid(linear_model)
+            y_class_pred = [1 if i > 0.5 else 0 for i in y_predicted]  # Corrected equality condition
+            return np.array(y_class_pred)
+        
+        except ValueError as e:
+            print(f"ValueError in fit method: {e}")
+        
+        except TypeError as e:
+            print(f"TypeError in fit method: {e}")
+
+        except Exception as e:
+            print(f"Unexpected error in fit method: {e}") 
