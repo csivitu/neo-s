@@ -27,10 +27,12 @@ class LogisticRegression:
                 X_batch = X_shuffled[i:i + self.batch_size]
                 y_batch = y_shuffled[i:i + self.batch_size]
 
+                y_batch = y_batch.reshape(-1,1)
+
                 linear_model = np.dot(X_batch, self.weights) + self.bias
                 y_predicted = sigmoid(linear_model)
 
-                dw = (1 / len(X_batch)) * np.dot(X_batch.T, (y_predicted - y_batch))
+                dw = (1 / len(X_batch)) * np.dot(X_batch.T, (y_predicted - y_batch).flatten())
                 db = (1 / len(X_batch)) * np.sum(y_predicted - y_batch)
 
                 if self.use_regularization:
