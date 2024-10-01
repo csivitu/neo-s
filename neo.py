@@ -58,6 +58,10 @@ issue_2_branch
                     y_batch = y_shuffled[i:i + self.batch_size]
 =======
         n_samples, n_features = X.shape
+main
+        self.weights = np.random.rand(n_features) * 0.01  # Error 1: Improper weight initialization
+        self.bias = 0  # Error 2: Bias should be a scalar, not an array
+=======
 branch4
         self.weights = np.zeros(n_features)  # Initialize weights to zeros for better convergence
         self.bias = 0.0  # Bias should be a scalar
@@ -67,6 +71,7 @@ branch4
 
         prev_weights = np.zeros(n_features)
         prev_bias = 0
+main
 main
 main
 
@@ -84,22 +89,41 @@ branch4
 
                 # Apply regularization if required
                 if self.use_regularization:
+main
+                    dw += (self.regularization_strength / n_samples) * self.weights  # Error 3: Regularization applied incorrectly
+=======
                     dw += (self.regularization_strength / len(X_batch)) * self.weights
+main
 
                 # Update weights and bias
                 self.weights -= self.learning_rate * dw
                 self.bias -= self.learning_rate * db
 
+main
+            if np.linalg.norm(dw)  and np.linalg.norm(db)< 0.001:
+                break  # Error 5: Inadequate stopping condition
+=======
             # Improved stopping condition
             weight_update_norm = np.linalg.norm(dw)
             if weight_update_norm < 0.001:
                 print(f"Stopping early at epoch {epoch} with weight update norm: {weight_update_norm:.6f}")
                 break
+main
 
     def predict(self, X):
         linear_model = np.dot(X, self.weights) + self.bias
         y_predicted = sigmoid(linear_model)
+main
+        y_class_pred = (y_predicted > 0.5).astype(int)  
+        ambiguous_indices = np.where(y_predicted == 0.5)[0]
+        
+        if ambiguous_indices.size > 0:
+            random_choices = np.random.choice([0, 1], size=ambiguous_indices.size)
+            y_class_pred[ambiguous_indices] = random_choices
+    
+=======
         y_class_pred = (y_predicted >= 0.5).astype(int)  # More concise and clear prediction
+main
         return y_class_pred
 
 # Sample training data
